@@ -2,6 +2,7 @@
 
 This project demonstrates the use of AWS Kinesis Firehose to convert a JSON records to Parquet format.
 The data is landed on S3. 
+Partitions on s3 will be named following the Hive convention.
 
 In `template.yaml` you will find the necessary cloudformation.
 
