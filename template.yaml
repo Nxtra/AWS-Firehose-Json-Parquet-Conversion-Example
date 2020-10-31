@@ -1,22 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Transform: AWS::Serverless-2016-10-31
-Description: >
-  firehose-format-conversion
-
-  Sample SAM Template for firehose-format-conversion
-
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
-Globals:
-  Function:
-    Timeout: 3
+Description: Firehose record format conversion cloudformation example
 
 Resources:
-  FirehoseEventPushFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-    Properties:
-      CodeUri: hello_world/
-      Handler: app.lambda_handler
-      Runtime: python3.8
   GlueDatabase:
     Type: AWS::Glue::Database
     Properties:
@@ -61,16 +46,16 @@ Resources:
                   ]',
               }
         TableType: EXTERNAL_TABLE
-  deliverystream:
+  DeliveryStream:
     Type: AWS::KinesisFirehose::DeliveryStream
     Properties:
       DeliveryStreamType: DirectPut
       ExtendedS3DestinationConfiguration:
-        RoleARN: !GetAtt deliveryRole.Arn
+        RoleARN: !GetAtt DeliveryRole.Arn
         BucketARN: !Join
           - ""
           - - "arn:aws:s3:::"
-            - !Ref s3bucket
+            - !Ref S3Bucket
         Prefix: !Join
           - ""
           - - !Ref GlueTable
@@ -96,7 +81,7 @@ Resources:
         DataFormatConversionConfiguration:
           SchemaConfiguration:
             CatalogId: !Ref AWS::AccountId
-            RoleARN: !GetAtt deliveryRole.Arn
+            RoleARN: !GetAtt DeliveryRole.Arn
             DatabaseName: !Ref GlueDatabase
             TableName: !Ref GlueTable
             Region: !Ref AWS::Region
@@ -108,12 +93,12 @@ Resources:
             Serializer:
               ParquetSerDe: {}
           Enabled: True
-  s3bucket:
+  S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
       VersioningConfiguration:
         Status: Enabled
-  deliveryRole:
+  DeliveryRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -145,11 +130,11 @@ Resources:
                   - !Join
                     - ""
                     - - "arn:aws:s3:::"
-                      - !Ref s3bucket
+                      - !Ref S3Bucket
                   - !Join
                     - ""
                     - - "arn:aws:s3:::"
-                      - !Ref s3bucket
+                      - !Ref S3Bucket
                       - "/*"
               - Effect: Allow
                 Action: "glue:GetTableVersions"
@@ -168,9 +153,9 @@ Resources:
                       - ":log-stream:*"
 
 Outputs:
-  FirehoseEventPushFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt FirehoseEventPushFunction.Arn
+  FirehoseName:
+    Description: "Name of the firehose that converts the record format and lands the data on S3"
+    Value: !Ref DeliveryStream
   FirehoseEventPushFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt FirehoseEventPushFunctionRole.Arn
+    Description: "Name of the bucket where the data arrives"
+    Value: !Ref S3Bucket
